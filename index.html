@@ -166,7 +166,7 @@ body {
 			game.camera.follow(player);*/
 			cursors = game.input.keyboard.createCursorKeys();
 			CreateScore( );
-			//audios.theme.play();
+			audios.theme.play();
 			audios.theme.addEventListener('ended', function( ) {
 				this.currentTime = 0;
 				this.play( );
