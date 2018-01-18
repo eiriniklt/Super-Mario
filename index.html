@@ -102,8 +102,8 @@ body {
 		function preload() {
 			//  We need this because the assets are on github pages
 			//  Remove the next 2 lines if running locally
-			//this.load.baseURL = 'https://eiriniklt.github.io/Super-Mario/';
-			//this.load.crossOrigin = 'anonymous';
+			this.load.baseURL = 'https://eiriniklt.github.io/Super-Mario/';
+			this.load.crossOrigin = 'anonymous';
 			//this.load.spritesheet('tiles', 'assets/super_mario_tiles.png', 16, 16);
 			this.load.spritesheet('tiles', 'assets/super_mario_tiles.png', 16, 16);
 			this.load.spritesheet('goomba', 'assets/goomba.png', 16, 16);
@@ -168,7 +168,7 @@ body {
 			game.camera.follow(player);*/
 			cursors = game.input.keyboard.createCursorKeys();
 			CreateScore( );
-			//audios.theme.play();
+			audios.theme.play();
 			audios.theme.addEventListener('ended', function( ) {
 				this.currentTime = 0;
 				this.play( );
