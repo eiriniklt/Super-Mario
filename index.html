@@ -1,0 +1,325 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>Super-Mario</title>
+<meta charset="utf-8">
+<style>
+body {
+	margin: 0;
+	padding: 0;
+	background-color: #000;
+}
+</style>
+<script src="//cdn.jsdelivr.net/phaser/2.6.2/phaser.min.js"></script>
+</head>
+<body>
+	<script type="text/javascript">
+		
+		var game = new Phaser.Game(600, 200, Phaser.CANVAS, '', {
+			preload : preload,
+			create : create,
+			update : update
+		}, false, false);
+		
+		// creating the statistics object which stores all the data used for stats/display
+		var statistics = { 
+			lifes : 3,
+			lifes_txt : null,
+			score : 0,
+			score_txt : null,
+			coins : 0,
+			goombas : 0,
+			gameover: null
+		};
+		
+		// creating a sound object which has all the loaded sounds needed to play
+		var audios = {
+			coin 	 	: new Audio( 'audio/coin.wav' ),
+			jump 	 	: new Audio( 'audio/jump.wav' ),
+			goomba_kill : new Audio( 'audio/goomba_kill.mp3' ),
+			gameover 	: new Audio( 'audio/gameover.mp3' ),
+			key 		: new Audio( 'audio/key.wav' ),
+			theme		: new Audio( 'audio/theme.mp3')
+		}
+		
+		function UpdateScore( ) {
+			//return ( 20 * statistics.goombas ) + ( 10 * statistics.coins );
+			var lifes = "";
+			for( var i = 0; i < statistics.lifes; i++ ) {
+				lifes += "\u2764 ";
+			}
+			//statistics.score_txt.text = "Lifes: " + lifes + " \nScore: " + statistics.score;
+			statistics.lifes_txt.text = "Lifes: " + lifes;
+			statistics.score_txt.text = "Score: " + statistics.score;
+			
+			if (statistics.coins == 59)
+			{
+			   statistics.YouWon.visible = true;
+			   game.paused = true;
+			}
+		}
+		
+		function CreateScore( ) {
+			var lifes = "";
+			for( var i = 0; i < statistics.lifes; i++ ) {
+				lifes += "\u2764 ";
+			}
+			
+			// lifes score text score-board
+			statistics.lifes_txt = game.add.text( 0, 0, "Lifes: " + lifes, { fontSize: '15px', fill: '#000' });
+			statistics.lifes_txt.stroke = '#000000';
+			statistics.lifes_txt.strokeThickness = 2;
+			statistics.lifes_txt.fill = '#43d637';
+			statistics.lifes_txt.addColor('#ff0000', 6);
+			statistics.lifes_txt.addStrokeColor('#000000', 20);
+			statistics.lifes_txt.fixedToCamera = true;
+			
+			// score text score-board
+			statistics.score_txt = game.add.text( 0, 20, "Score: 0", { fontSize: '15px', fill: '#000' });
+			statistics.score_txt.stroke = '#000000';
+			statistics.score_txt.strokeThickness = 2;
+			statistics.score_txt.fill = '#43d637';
+			statistics.score_txt.addColor('#c0c0c0', 6);
+			statistics.score_txt.addColor('#43d637', 13);
+			statistics.score_txt.addStrokeColor('#000000', 20);
+			statistics.score_txt.fixedToCamera = true;
+			
+			// winner score-board
+			
+			statistics.YouWon = game.add.text( 0, 0, "", { align: "center", fontSize: '30px', fill: '#000', boundsAlignH: "center", boundsAlignV: "middle" });
+			statistics.YouWon.setShadow(3, 3, 'rgba(50,50,50,0.5)', 2);
+			statistics.YouWon.setTextBounds(0, 0, 650, 160);
+			statistics.YouWon.stroke = '#c0c0c0';
+			statistics.YouWon.strokeThickness = 2;
+			statistics.YouWon.fixedToCamera = true;
+			statistics.YouWon.visible = false;
+			
+
+			// game over score-board
+			statistics.gameover = game.add.text( 0, 0, "", { align: "center", fontSize: '30px', fill: '#000', boundsAlignH: "center", boundsAlignV: "middle" });
+			statistics.gameover.setShadow(3, 3, 'rgba(50,50,50,0.5)', 2);
+			statistics.gameover.setTextBounds(0, 0, 650, 160);
+			statistics.gameover.stroke = '#c0c0c0';
+			statistics.gameover.strokeThickness = 2;
+			statistics.gameover.fixedToCamera = true;
+			statistics.gameover.visible = false;
+			
+		}
+		
+		function GameWin( ) {
+		
+			statistics.lifes_txt.visible = false;
+			statistics.score_txt.visible = false;
+			statistics.YouWon.text = "YOU WON!\nTotal Score:" + statistics.score;
+			statistics.YouWon.visible = true;
+			audios.theme.pause( );
+			
+		}
+
+		function GameOver( ) {
+		
+			statistics.lifes_txt.visible = false;
+			statistics.score_txt.visible = false;
+			statistics.gameover.text = "Game Over!\nYou Lost all your Lifes!\nTotal Score: " + statistics.score;
+			statistics.gameover.visible = true;
+			// stop background theme music;
+			audios.theme.pause( );
+			audios.theme.currentTime = 0;
+		}
+		
+		var Player;
+		
+		
+		
+		function preload() {
+			//  We need this because the assets are on github pages
+			//  Remove the next 2 lines if running locally
+			//this.load.baseURL = 'https://eiriniklt.github.io/Super-Mario/';
+			//this.load.crossOrigin = 'anonymous';
+			//this.load.spritesheet('tiles', 'assets/super_mario_tiles.png', 16, 16);
+			this.load.spritesheet('tiles', 'assets/super_mario_tiles.png', 16, 16);
+			this.load.spritesheet('goomba', 'assets/goomba.png', 16, 16);
+			this.load.spritesheet('mario', 'assets/mario.png', 16, 16);
+			this.load.spritesheet('coin', 'assets/coin.png', 16, 16);
+			this.load.spritesheet('questionbox', 'assets/super_mario_tiles.png', 16, 16);
+			this.load.image('mario_life', 'assets/mario_life.png');
+			this.load.tilemap('level', 'assets/super_mario_map.json', null, Phaser.Tilemap.TILED_JSON);
+		}
+		
+		function create() {
+			Phaser.Canvas.setImageRenderingCrisp(game.canvas)
+			game.scale.pageAlignHorizontally = true;
+			game.scale.pageAlignVertically = true
+			game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
+			game.physics.startSystem(Phaser.Physics.ARCADE);
+			game.stage.backgroundColor = '#5c94fc';
+			map = game.add.tilemap('level');
+			map.addTilesetImage('tiles', 'tiles');
+		
+			
+			//map.setCollisionBetween(3, 12, true, 'solid');
+			//map.setCollisionBetween(0, 27, true, 'solid');
+			var collision_list = [ [0,33], [264,265], [297,298] ];
+			for ( var i = 0; i < collision_list.length; i++ ) {
+				map.setCollisionBetween( collision_list[i][0] + 1 , collision_list[i][1] + 1, true, 'solid')
+			}
+			
+			map.createLayer('background');
+			
+			layer = map.createLayer('solid');
+			layer.resizeWorld();
+			
+			
+			coins = game.add.group();
+			coins.enableBody = true;
+			// in our new map coin is on ID 57, so:
+			map.createFromTiles( 58, null, 'coin', 'stuff', coins );
+			coins.callAll('animations.add', 'animations', 'spin', [ 0, 0, 1, 2 ], 3, true);
+			coins.callAll('animations.play', 'animations', 'spin');
+
+			// q box
+			questionboxes = game.add.group( );
+			questionboxes.enableBody = true;
+			map.createFromTiles( 24, null, 'questionbox', 'solid', questionboxes );
+			
+			goombas = game.add.group();
+			goombas.enableBody = true;
+			map.createFromTiles( 29, null, 'goomba', 'stuff', goombas);
+			goombas.callAll('animations.add', 'animations', 'walk', [ 0, 1 ], 2, true);
+			goombas.callAll('animations.play', 'animations', 'walk');
+			goombas.setAll('body.bounce.x', 1);
+			goombas.setAll('body.velocity.x', -20);
+			goombas.setAll('body.gravity.y', 500);
+			player = create_player( );
+			/*player = game.add.sprite(16, game.world.height - 48, 'mario');
+			game.physics.arcade.enable(player);
+			player.body.gravity.y = 370;
+			player.body.collideWorldBounds = true;
+			player.animations.add('walkRight', [ 1, 2, 3 ], 10, true);
+			player.animations.add('walkLeft', [ 8, 9, 10 ], 10, true);
+			player.goesRight = true;
+			game.camera.follow(player);*/
+			cursors = game.input.keyboard.createCursorKeys();
+			CreateScore( );
+			//audios.theme.play();
+			audios.theme.addEventListener('ended', function( ) {
+				this.currentTime = 0;
+				this.play( );
+			}, false );
+		}
+		
+		function create_player( ) {
+			player = game.add.sprite(16, game.world.height - 48, 'mario');
+			game.physics.arcade.enable(player);
+			player.body.gravity.y = 370;
+			player.body.collideWorldBounds = true;
+			player.animations.add('walkRight', [ 1, 2, 3 ], 10, true);
+			player.animations.add('walkLeft', [ 8, 9, 10 ], 10, true);
+			player.goesRight = true;
+			game.camera.follow(player);
+			return player;
+		}
+		
+		function update() {
+			game.physics.arcade.collide(player, layer);
+			game.physics.arcade.collide(goombas, layer);
+			game.physics.arcade.collide( questionboxes, layer );
+			game.physics.arcade.overlap(player, goombas, goombaOverlap);
+			game.physics.arcade.overlap(player, coins, coinOverlap);
+			game.physics.arcade.overlap(player, questionboxes, QuestionBoxOverLap );
+			if (player.body.enable) {
+				player.body.velocity.x = 0;
+				if (cursors.left.isDown) {
+					player.body.velocity.x = -90;
+					player.animations.play('walkLeft');
+					player.goesRight = false;
+				} else if (cursors.right.isDown) {
+					player.body.velocity.x = 90;
+					player.animations.play('walkRight');
+					player.goesRight = true;
+				} else {
+					player.animations.stop();
+					if (player.goesRight)
+						player.frame = 0;
+					else
+						player.frame = 7;
+				}
+				if (cursors.up.isDown && player.body.onFloor()) {
+					audios.jump.play( );
+					player.body.velocity.y = -190;
+					player.animations.stop();
+				}
+				if (player.body.velocity.y != 0) {
+					if (player.goesRight)
+						player.frame = 5;
+					else
+						player.frame = 12;
+				}
+				if ( player.position.y > 220 ) {
+					KillPlayer( player );
+				}
+			}
+		}
+		function coinOverlap(player, coin) {
+			coin.kill();
+			audios.coin.play( );
+			statistics.coins++;
+			statistics.score += 10;
+			UpdateScore( );
+				if (statistics.coins == 59)
+			{
+			   GameWin( );
+			   game.paused = true;
+			}
+		}
+		
+		function KillPlayer( player ) {
+			player.frame = 6;
+			player.body.enable = false;
+			player.animations.stop();
+			audios.gameover.play( );
+			audios.theme.pause( );
+			game.time.events.add(Phaser.Timer.SECOND * 3, function() {
+				statistics.lifes--;
+				UpdateScore( );
+				if ( statistics.lifes > 0 ) {
+					// if there are enough lifes then re-create the game
+					player.kill( );
+					player = create_player( );
+					audios.theme.play( );
+				}
+				else {
+					GameOver( );
+					game.paused = true;
+				}
+			});
+		}
+
+		function QuestionBoxOverLap(player, questionbox) {
+			if ( player.body.touching.up ) {
+				audios.key.play( );
+				console.log( questionbox );
+			}
+
+		}
+		
+		function goombaOverlap(player, goomba) {
+			if (player.body.touching.down) {
+				goomba.animations.stop();
+				goomba.frame = 2;
+				goomba.body.enable = false;
+				player.body.velocity.y = -80;
+				statistics.goombas++;
+				statistics.score += 20;
+				UpdateScore( );
+				audios.goomba_kill.play( );
+				game.time.events.add(Phaser.Timer.SECOND, function() {
+					goomba.kill( );
+				});
+			} else {
+				KillPlayer( player );
+			}
+		}
+	</script>
+</body>
+</html>
